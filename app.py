@@ -52,8 +52,24 @@ try:
     from torch.serialization import add_safe_globals
     from ultralytics.nn.tasks import SegmentationModel
     import torch.nn.modules.container
-    from ultralytics.nn.modules import Conv
-    add_safe_globals([SegmentationModel, torch.nn.modules.container.Sequential, Conv])
+    import ultralytics.nn.modules
+    from ultralytics.nn.modules import (
+        Conv, C2f, Detect, Classify, AIFI, DWConv, 
+        Bottleneck, SPPF, Focus, GhostConv, GhostBottleneck, 
+        RepConv, CBAM, ChannelAttention, SpatialAttention, 
+        TransformerBlock, C3, C3TR, C3Ghost, C3x, 
+        Ensemble, Concat, DetectMultiBackend
+    )
+    add_safe_globals([
+        SegmentationModel,
+        torch.nn.modules.container.Sequential,
+        Conv, C2f, Detect, Classify, AIFI, DWConv,
+        Bottleneck, SPPF, Focus, GhostConv, GhostBottleneck,
+        RepConv, CBAM, ChannelAttention, SpatialAttention,
+        TransformerBlock, C3, C3TR, C3Ghost, C3x,
+        Ensemble, Concat, DetectMultiBackend,
+        ultralytics.nn.modules  # fallback: allow all in this module
+    ])
 except Exception as e:
     print('Warning: Could not patch torch safe globals for YOLOv8:', e)
 
