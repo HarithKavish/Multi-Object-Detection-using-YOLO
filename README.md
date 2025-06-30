@@ -3,8 +3,7 @@ title: Multi-Object Detection using YOLO
 emoji: 🦾
 colorFrom: indigo
 colorTo: blue
-sdk: fastapi
-sdk_version: "0.110.2"
+sdk: docker
 app_file: app.py
 pinned: false
 ---
