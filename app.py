@@ -50,14 +50,8 @@ except Exception as e:
 # YOLOv8 model loading for PyTorch >=2.6
 try:
     from torch.serialization import add_safe_globals
-    from ultralytics.nn.tasks import SegmentationModel
-    import torch.nn.modules.container
-    from ultralytics.nn.modules import Conv, C2f, Detect
-    add_safe_globals([
-        SegmentationModel,
-        torch.nn.modules.container.Sequential,
-        Conv, C2f, Detect
-    ])
+    import ultralytics.nn.modules
+    add_safe_globals([ultralytics.nn.modules.Conv])
 except Exception as e:
     print('Warning: Could not patch torch safe globals for YOLOv8:', e)
 
