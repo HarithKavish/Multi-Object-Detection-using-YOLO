@@ -47,6 +47,14 @@ except Exception as e:
     cnn_model = build_cnn_model()
     print('Warning: image_classifier.keras not found or incompatible. Created a new model instead.')
 
+# Patch PyTorch safe globals for YOLOv8 segmentation model loading (PyTorch 2.6+)
+try:
+    from torch.serialization import add_safe_globals
+    from ultralytics.nn.tasks import SegmentationModel
+    add_safe_globals([SegmentationModel])
+except Exception as e:
+    print('Warning: Could not patch torch safe globals for YOLOv8:', e)
+
 yolo_model = YOLO('yolov8n-seg.pt')
 
 # Helper functions
