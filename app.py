@@ -22,7 +22,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Load models at startup
+# Load CNN model
 try:
     cnn_model = keras.models.load_model('image_classifier.keras')
 except Exception as e:
@@ -47,33 +47,25 @@ except Exception as e:
     cnn_model = build_cnn_model()
     print('Warning: image_classifier.keras not found or incompatible. Created a new model instead.')
 
-# Patch PyTorch safe globals for YOLOv8 segmentation model loading (PyTorch 2.6+)
+# YOLOv8 model loading for PyTorch >=2.6
 try:
     from torch.serialization import add_safe_globals
     from ultralytics.nn.tasks import SegmentationModel
     import torch.nn.modules.container
-    import ultralytics.nn.modules
-    from ultralytics.nn.modules import (
-        Conv, C2f, Detect, Classify, AIFI, DWConv, 
-        Bottleneck, SPPF, Focus, GhostConv, GhostBottleneck, 
-        RepConv, CBAM, ChannelAttention, SpatialAttention, 
-        TransformerBlock, C3, C3TR, C3Ghost, C3x, 
-        Ensemble, Concat, DetectMultiBackend
-    )
+    from ultralytics.nn.modules import Conv, C2f, Detect
     add_safe_globals([
         SegmentationModel,
         torch.nn.modules.container.Sequential,
-        Conv, C2f, Detect, Classify, AIFI, DWConv,
-        Bottleneck, SPPF, Focus, GhostConv, GhostBottleneck,
-        RepConv, CBAM, ChannelAttention, SpatialAttention,
-        TransformerBlock, C3, C3TR, C3Ghost, C3x,
-        Ensemble, Concat, DetectMultiBackend,
-        ultralytics.nn.modules  # fallback: allow all in this module
+        Conv, C2f, Detect
     ])
 except Exception as e:
     print('Warning: Could not patch torch safe globals for YOLOv8:', e)
 
-yolo_model = YOLO('yolov8n-seg.pt')
+try:
+    yolo_model = YOLO('yolov8n-seg.pt')
+except Exception as e:
+    print('Error loading YOLO model:', e)
+    yolo_model = None
 
 # Helper functions
 def resize_for_cnn(frame, target_size=(32, 32)):
@@ -96,16 +88,19 @@ async def detect_object(file: UploadFile = File(...)):
     predicted_class = int(np.argmax(prediction))
 
     # YOLO detection
-    preprocessed_frame_yolo = preprocess_for_yolo(frame)
-    results = yolo_model(preprocessed_frame_yolo)
     detected_objects = []
     object_counts = {}
-    for r in results:
-        for box in r.boxes:
-            cls = int(box.cls[0])
-            label = yolo_model.model.names[cls] if hasattr(yolo_model.model, 'names') else str(cls)
-            detected_objects.append(label)
-            object_counts[label] = object_counts.get(label, 0) + 1
+    if yolo_model is not None:
+        preprocessed_frame_yolo = preprocess_for_yolo(frame)
+        results = yolo_model(preprocessed_frame_yolo)
+        for r in results:
+            for box in r.boxes:
+                cls = int(box.cls[0])
+                label = yolo_model.model.names[cls] if hasattr(yolo_model.model, 'names') else str(cls)
+                detected_objects.append(label)
+                object_counts[label] = object_counts.get(label, 0) + 1
+    else:
+        print('YOLO model not loaded, skipping detection.')
 
     return JSONResponse({
         "cnn_class": predicted_class,
