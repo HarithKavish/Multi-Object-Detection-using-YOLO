@@ -38,3 +38,4 @@ pip install -r requirements.txt
 ## Contributors
 - Harith Kavish S
 - Sharwan Krishnan P
+- Sanjay R
