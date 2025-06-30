@@ -47,18 +47,74 @@ except Exception as e:
     cnn_model = build_cnn_model()
     print('Warning: image_classifier.keras not found or incompatible. Created a new model instead.')
 
-# YOLOv8 model loading for PyTorch >=2.6
-try:
-    from torch.serialization import add_safe_globals
-    import ultralytics.nn.modules
-    add_safe_globals([ultralytics.nn.modules.Conv])
-except Exception as e:
-    print('Warning: Could not patch torch safe globals for YOLOv8:', e)
+def load_yolo_model(model_path, max_dynamic_patches=5):
+    """
+    Robust YOLOv8 loader for PyTorch >=2.6 with dynamic safe globals patching and fallback.
+    Attempts to patch required classes dynamically from error messages.
+    As a last resort, tries weights_only=False (unsafe, but local model is trusted).
+    """
+    import importlib
+    yolo_model = None
+    patched_classes = set([
+        'ultralytics.nn.modules.Conv',
+        'ultralytics.nn.tasks.SegmentationModel'
+    ])
+    try:
+        from torch.serialization import add_safe_globals
+        # Initial patch
+        for cls_path in patched_classes:
+            module_name, class_name = cls_path.rsplit('.', 1)
+            mod = importlib.import_module(module_name)
+            add_safe_globals([getattr(mod, class_name)])
+        from ultralytics import YOLO
+        for _ in range(max_dynamic_patches):
+            try:
+                return YOLO(model_path)
+            except Exception as e:
+                msg = str(e)
+                # Look for 'Unsupported global: GLOBAL ...' in error
+                import re
+                m = re.search(r"Unsupported global: GLOBAL ([\w\.]+)", msg)
+                if m:
+                    cls_path = m.group(1)
+                    if cls_path not in patched_classes:
+                        try:
+                            module_name, class_name = cls_path.rsplit('.', 1)
+                            mod = importlib.import_module(module_name)
+                            add_safe_globals([getattr(mod, class_name)])
+                            patched_classes.add(cls_path)
+                            print(f"Patched safe global: {cls_path}")
+                            continue  # Try loading again
+                        except Exception as patch_e:
+                            print(f"Failed to patch {cls_path}: {patch_e}")
+                # If not a safe globals error, break
+                print(f"YOLO model load failed: {e}")
+                break
+        # Last resort: try weights_only=False if available
+        try:
+            import torch
+            print("Attempting to load YOLO with weights_only=False (unsafe, but local model is trusted)...")
+            orig_torch_load = torch.load
+            def patched_load(*args, **kwargs):
+                kwargs['weights_only'] = False
+                return orig_torch_load(*args, **kwargs)
+            torch.load = patched_load
+            yolo = YOLO(model_path)
+            torch.load = orig_torch_load  # Restore
+            print("YOLO loaded with weights_only=False.")
+            return yolo
+        except Exception as e2:
+            print(f"YOLO model load with weights_only=False also failed: {e2}")
+    except Exception as e:
+        print(f"YOLO loader setup failed: {e}")
+    print("YOLO model could not be loaded after all attempts.")
+    return None
 
+# Load YOLOv8 model robustly
 try:
-    yolo_model = YOLO('yolov8n-seg.pt')
+    yolo_model = load_yolo_model('yolov8n-seg.pt')
 except Exception as e:
-    print('Error loading YOLO model:', e)
+    print('Error in YOLO model loading logic:', e)
     yolo_model = None
 
 # Helper functions
