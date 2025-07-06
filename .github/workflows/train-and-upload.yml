@@ -27,6 +27,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install huggingface_hub tensorflowjs
+        shell: bash
 
       - name: Train model (replace with your script)
         run: |

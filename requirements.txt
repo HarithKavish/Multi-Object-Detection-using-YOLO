@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 wheel==0.38.4
 setuptools==65.5.0
 fastapi==0.110.2
@@ -9,11 +8,4 @@ tensorflow==2.15.0
 ultralytics==8.1.34
 pillow==10.2.0
 python-multipart==0.0.6
-=======
-opencv-python
-numpy
-tensorflow
 keras
-ultralytics
-tqdm
->>>>>>> 1c3894d2065701b19ab2a500433a6d7f7a075d13
