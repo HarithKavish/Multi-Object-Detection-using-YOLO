@@ -25,7 +25,7 @@ app.add_middleware(
 
 # Load CNN model
 try:
-    keras_model_path = hf_hub_download(repo_id="harithkavish/multi-object-detection-models", filename="image_classifier.keras")
+    keras_model_path = hf_hub_download(repo_id="harithkavish/SkinNet-Analyzer", filename="image_classifier.keras")
     cnn_model = keras.models.load_model(keras_model_path)
 except Exception as e:
     from tensorflow import keras as keras_build
@@ -114,7 +114,7 @@ def load_yolo_model(model_path, max_dynamic_patches=5):
 
 # Load YOLOv8 model robustly
 try:
-    yolo_model_path = hf_hub_download(repo_id="harithkavish/multi-object-detection-models", filename="yolov8n-seg.pt")
+    yolo_model_path = hf_hub_download(repo_id="harithkavish/SkinNet-Analyzer", filename="yolov8n-seg.pt")
     yolo_model = load_yolo_model(yolo_model_path)
 except Exception as e:
     print('Error in YOLO model loading logic:', e)

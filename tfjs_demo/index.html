@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Edge CNN Classifier Demo (TensorFlow.js)</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.18.0/dist/tf.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 2em;
+        }
+
+        #preview {
+            margin-top: 1em;
+            max-width: 200px;
+            max-height: 200px;
+            border: 1px solid #ccc;
+        }
+
+        #loading {
+            color: #888;
+        }
+    </style>
+</head>
+
+<body>
+    <h2>Edge CNN Classifier Demo (TensorFlow.js)</h2>
+    <input type="file" id="fileInput" accept="image/*">
+    <div id="loading">Loading model...</div>
+    <img id="preview" style="display:none;" />
+    <div id="result"></div>
+    <script>
+        const CLASS_LABELS = [
+            'airplane', 'automobile', 'bird', 'cat', 'deer',
+            'dog', 'frog', 'horse', 'ship', 'truck'
+        ];
+        const MODEL_URL = 'https://huggingface.co/harithkavish/SkinNet-Analyzer/resolve/main/tfjs_model/model.json';
+        let model;
+
+        async function loadModel() {
+            try {
+                model = await tf.loadLayersModel(MODEL_URL);
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('result').innerText = 'Model loaded. Choose an image.';
+            } catch (e) {
+                document.getElementById('loading').innerText = 'Failed to load model.';
+                document.getElementById('result').innerText = '';
+            }
+        }
+
+        async function predictImage(img) {
+            let tensor = tf.browser.fromPixels(img)
+                .resizeBilinear([32, 32])
+                .toFloat()
+                .div(255.0)
+                .expandDims(0);
+            let prediction = model.predict(tensor);
+            let data = await prediction.data();
+            let classIdx = prediction.argMax(-1).dataSync()[0];
+            let confidence = (data[classIdx] * 100).toFixed(2);
+            let label = CLASS_LABELS[classIdx] || classIdx;
+            document.getElementById('result').innerText = `Predicted class: ${label} (confidence: ${confidence}%)`;
+        }
+
+        document.getElementById('fileInput').addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const img = document.getElementById('preview');
+            img.onload = () => {
+                img.style.display = 'block';
+                predictImage(img);
+            };
+            img.src = URL.createObjectURL(file);
+        });
+        loadModel();
+    </script>
+</body>
+
+</html>
