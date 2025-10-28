@@ -7,6 +7,7 @@ import numpy as np
 from PIL import Image
 from ultralytics import YOLO
 from tensorflow import keras
+from collections import Counter
 
 # Load YOLO model
 yolov8_model = YOLO('yolov8n-seg.pt')
@@ -93,6 +94,29 @@ def detect_objects(image):
     
     return annotated_img, info_text
 
+def detect_object_api(image):
+    """API endpoint for custom frontend - returns JSON with object counts."""
+    if image is None:
+        return {"object_counts": {}, "error": "No image provided"}
+    
+    # Convert PIL to numpy array
+    img_array = np.array(image)
+    
+    # YOLO detection
+    results = yolov8_model(img_array, verbose=False)
+    
+    # Count detected objects
+    detected_labels = []
+    for r in results:
+        for box in r.boxes:
+            cls = int(box.cls[0])
+            detected_labels.append(r.names[cls])
+    
+    # Count occurrences
+    object_counts = dict(Counter(detected_labels))
+    
+    return {"object_counts": object_counts}
+
 # Create Gradio interface with tabs
 with gr.Blocks(title="Multi-Object Detection using YOLO and Custom CNN") as demo:
     gr.Markdown("# Multi-Object Detection using YOLO and Custom CNN")
@@ -121,6 +145,20 @@ with gr.Blocks(title="Multi-Object Detection using YOLO and Custom CNN") as demo
             outputs=gr.Image(type="numpy", streaming=True),
             live=True,
             css=".gradio-container {max-width: 900px}"
+        )
+    
+    with gr.Tab("🔌 API"):
+        gr.Markdown("### API Endpoint for Custom Frontend")
+        gr.Markdown("Upload an image to get object counts in JSON format.")
+        api_image_input = gr.Image(type="pil", label="Upload Image")
+        api_button = gr.Button("Get Object Counts")
+        api_output = gr.JSON(label="API Response")
+        
+        api_button.click(
+            fn=detect_object_api,
+            inputs=api_image_input,
+            outputs=api_output,
+            api_name="detect-object"  # This creates the /api/detect-object endpoint
         )
 
 if __name__ == "__main__":
