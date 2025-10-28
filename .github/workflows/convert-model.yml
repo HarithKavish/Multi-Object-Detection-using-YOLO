@@ -51,6 +51,6 @@ jobs:
               run: |
                   git config --local user.email "github-actions[bot]@users.noreply.github.com"
                   git config --local user.name "github-actions[bot]"
-                  git add tfjs_model/
+                  git add -f tfjs_model/
                   git commit -m "Update TensorFlow.js model [skip ci]" || echo "No changes to commit"
                   git push || echo "Nothing to push"
