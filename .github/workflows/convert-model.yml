@@ -22,22 +22,25 @@ jobs:
 
             - name: Install dependencies
               run: |
-                  pip install tensorflow==2.15.0 tensorflowjs opencv-python-headless numpy tqdm
+                  pip install ultralytics onnx onnx-tf tensorflow==2.15.0 tensorflowjs protobuf==3.20.3
 
             - name: Train CNN Model
               run: |
-                  python main.py << EOF
-                  5
-                  EOF
+                  python main.py
 
             - name: Verify H5 file exists
               run: |
-                  ls -lh image_classifier.*
-                  echo "Files created successfully"
+                  ls -lh yolov8n.onnx
+                  echo "ONNX export successful"
+
+            - name: Convert ONNX to TensorFlow SavedModel
+              run: |
+                  onnx-tf convert -i yolov8n.onnx -o yolov8_savedmodel/
+                  echo "TensorFlow conversion complete"
 
             - name: Convert to TensorFlow.js using H5 format
               run: |
-                  tensorflowjs_converter --input_format=keras --skip_op_check image_classifier.h5 tfjs_model/
+                  tensorflowjs_converter --input_format=tf_saved_model --output_format=tfjs_graph_model yolov8_savedmodel/ tfjs_model/
 
             - name: Verify conversion
               run: |
