@@ -1,44 +1,56 @@
 name: Convert Model to TensorFlow.js
 
 on:
-  push:
-    branches: [ main ]
-  workflow_dispatch:
+    push:
+        branches: [main]
+    workflow_dispatch:
 
 jobs:
-  convert:
-    runs-on: ubuntu-latest
-    
-    steps:
-    - uses: actions/checkout@v3
-    
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.10'
-    
-    - name: Install dependencies
-      run: |
-        pip install tensorflow tensorflowjs opencv-python-headless numpy
-    
-    - name: Train CNN Model
-      run: |
-        python main.py
-    
-    - name: Convert to TensorFlow.js
-      run: |
-        tensorflowjs_converter --input_format=keras image_classifier.h5 tfjs_model/
-    
-    - name: Upload TensorFlow.js model
-      uses: actions/upload-artifact@v3
-      with:
-        name: tfjs-model
-        path: tfjs_model/
-    
-    - name: Commit and push tfjs_model
-      run: |
-        git config --local user.email "github-actions[bot]@users.noreply.github.com"
-        git config --local user.name "github-actions[bot]"
-        git add tfjs_model/
-        git commit -m "Update TensorFlow.js model" || echo "No changes to commit"
-        git push || echo "Nothing to push"
+    convert:
+        runs-on: ubuntu-latest
+
+        steps:
+            - uses: actions/checkout@v3
+
+            - name: Set up Python
+              uses: actions/setup-python@v4
+              with:
+                  python-version: "3.10"
+
+            - name: Install dependencies
+              run: |
+                  pip install tensorflow tensorflowjs opencv-python-headless numpy tqdm
+
+            - name: Train CNN Model
+              run: |
+                  python main.py << EOF
+                  5
+                  EOF
+
+            - name: Verify H5 file exists
+              run: |
+                  ls -lh image_classifier.*
+                  echo "Files created successfully"
+
+            - name: Convert to TensorFlow.js using H5 format
+              run: |
+                  tensorflowjs_converter --input_format=keras image_classifier.h5 tfjs_model/
+
+            - name: Verify conversion
+              run: |
+                  ls -lh tfjs_model/
+                  echo "Conversion successful"
+
+            - name: Upload TensorFlow.js model
+              uses: actions/upload-artifact@v3
+              with:
+                  name: tfjs-model
+                  path: tfjs_model/
+
+            - name: Commit and push tfjs_model
+              run: |
+                  git config --local user.email "github-actions[bot]@users.noreply.github.com"
+                  git config --local user.name "github-actions[bot]"
+                  git add tfjs_model/
+                  git commit -m "Update TensorFlow.js model [skip ci]" || echo "No changes to commit"
+                  git push || echo "Nothing to push"
