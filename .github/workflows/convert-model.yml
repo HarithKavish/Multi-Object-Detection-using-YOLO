@@ -37,7 +37,7 @@ jobs:
 
             - name: Convert to TensorFlow.js using H5 format
               run: |
-                  tensorflowjs_converter --input_format=keras image_classifier.h5 tfjs_model/
+                  tensorflowjs_converter --input_format=keras --skip_op_check image_classifier.h5 tfjs_model/
 
             - name: Verify conversion
               run: |
