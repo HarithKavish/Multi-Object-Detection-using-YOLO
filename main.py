@@ -3,8 +3,8 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'  # Suppress TensorFlow logging
 
 import cv2 as cv
 import numpy as np
-from tensorflow import keras
-from keras import datasets, models, layers
+import tensorflow as tf
+from tensorflow.keras import datasets, models, layers
 from tqdm import tqdm
 
 # Suppress TensorFlow warnings and info messages
