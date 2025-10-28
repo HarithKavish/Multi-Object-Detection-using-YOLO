@@ -7,6 +7,13 @@ video.style.display = 'block';
 video.style.margin = '40px auto';
 document.body.insertBefore(video, document.body.firstChild);
 
+// Create file upload option
+const uploadDiv = document.createElement('div');
+uploadDiv.style.textAlign = 'center';
+uploadDiv.style.margin = '20px auto';
+uploadDiv.innerHTML = '<input type="file" id="imageUpload" accept="image/*" style="display:none;"><button id="uploadBtn" style="padding: 10px 20px; font-size: 14px; cursor: pointer; border-radius: 5px; background: #4CAF50; color: white; border: none;">📁 Or Upload Image</button>';
+document.body.insertBefore(uploadDiv, video.nextSibling);
+
 // Create a container for results
 const resultDiv = document.createElement('div');
 resultDiv.id = 'results';
@@ -17,7 +24,7 @@ resultDiv.style.background = '#f8f8f8';
 resultDiv.style.padding = '16px';
 resultDiv.style.borderRadius = '8px';
 resultDiv.style.boxShadow = '0 2px 8px #0001';
-document.body.insertBefore(resultDiv, video.nextSibling);
+document.body.insertBefore(resultDiv, uploadDiv.nextSibling);
 
 // CIFAR-10 class names
 const cifar10Classes = ['airplane', 'automobile', 'bird', 'cat', 'deer',
@@ -70,12 +77,29 @@ async function classifyWithCNN(canvas) {
 async function startCamera() {
     try {
         await loadCNNModel();
+
+        // Request camera permission
+        resultDiv.innerHTML = '<p>📹 Requesting camera access...</p><p style="font-size: 12px; color: #666;">Please allow camera access when prompted by your browser.</p>';
+
         const stream = await navigator.mediaDevices.getUserMedia({ video: true });
         video.srcObject = stream;
+
+        resultDiv.innerHTML = '<p>✓ Camera connected! Processing frames...</p>';
         processFrames();
     } catch (err) {
-        resultDiv.textContent = 'Camera access denied or not available: ' + err.message;
         console.error('Camera error:', err);
+
+        let errorMessage = '<h3 style="color: #f44336; margin-top: 0;">⚠️ Camera Access Denied</h3>';
+        errorMessage += '<p><strong>How to fix:</strong></p>';
+        errorMessage += '<ol style="text-align: left; margin-left: 20px;">';
+        errorMessage += '<li>Click the <strong>camera icon</strong> in your browser\'s address bar</li>';
+        errorMessage += '<li>Select <strong>"Allow"</strong> for camera access</li>';
+        errorMessage += '<li>Refresh the page</li>';
+        errorMessage += '</ol>';
+        errorMessage += '<p style="font-size: 12px; color: #666;">Or use HTTPS: Camera access requires a secure connection.</p>';
+        errorMessage += '<p style="font-size: 12px; color: #999;">Error: ' + err.message + '</p>';
+
+        resultDiv.innerHTML = errorMessage;
     }
 }
 
@@ -118,5 +142,47 @@ function displayResults(cnnData) {
 
     resultDiv.innerHTML = html;
 }
+
+// Handle image upload
+document.addEventListener('DOMContentLoaded', function () {
+    const uploadBtn = document.getElementById('uploadBtn');
+    const imageUpload = document.getElementById('imageUpload');
+
+    uploadBtn.addEventListener('click', () => {
+        imageUpload.click();
+    });
+
+    imageUpload.addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            const img = new Image();
+            img.onload = async () => {
+                // Display the image
+                video.style.display = 'none';
+                const imgDisplay = document.createElement('img');
+                imgDisplay.src = img.src;
+                imgDisplay.style.width = '640px';
+                imgDisplay.style.margin = '40px auto';
+                imgDisplay.style.display = 'block';
+                imgDisplay.id = 'uploaded-image';
+
+                const existingImg = document.getElementById('uploaded-image');
+                if (existingImg) existingImg.remove();
+                document.body.insertBefore(imgDisplay, document.body.firstChild);
+
+                // Classify the image
+                const canvas = document.createElement('canvas');
+                canvas.width = img.width;
+                canvas.height = img.height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0);
+
+                const cnnResult = await classifyWithCNN(canvas);
+                displayResults(cnnResult);
+            };
+            img.src = URL.createObjectURL(file);
+        }
+    });
+});
 
 window.onload = startCamera;
