@@ -22,7 +22,7 @@ jobs:
 
             - name: Install dependencies
               run: |
-                  pip install tensorflow tensorflowjs opencv-python-headless numpy tqdm
+                  pip install tensorflow==2.15.0 tensorflowjs opencv-python-headless numpy tqdm
 
             - name: Train CNN Model
               run: |
