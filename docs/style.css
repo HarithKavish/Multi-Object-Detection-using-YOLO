@@ -1,33 +1,51 @@
-/* Blank CSS file for custom styles */
+/* CSS Variables for Light/Dark Theme */
+:root {
+    --bg-color: #f4f4f9;
+    --text-color: #222;
+    --card-bg: #fff;
+    --card-border: #38bdf8;
+    --card-shadow: rgba(0, 0, 0, 0.13);
+}
+
+.dark {
+    --bg-color: #121212;
+    --text-color: #e0e0e0;
+    --card-bg: #1e1e1e;
+    --card-border: #2563eb;
+    --card-shadow: rgba(0, 0, 0, 0.5);
+}
+
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     margin: 0;
     padding: 0;
-    background: #f4f4f9;
-    color: #222;
+    background: var(--bg-color);
+    color: var(--text-color);
     min-height: 100vh;
     position: relative;
+    transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 video {
     display: block;
     margin: 40px auto 0 auto;
     border-radius: 16px;
-    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.13), 0 1.5px 4px rgba(0, 0, 0, 0.10);
-    border: 2px solid #38bdf8;
-    background: #fff;
+    box-shadow: 0 4px 24px var(--card-shadow), 0 1.5px 4px var(--card-shadow);
+    border: 2px solid var(--card-border);
+    background: var(--card-bg);
 }
 
 #api-results {
     max-width: 640px;
     margin: 24px auto;
-    background: #fff;
-    color: #222;
+    background: var(--card-bg);
+    color: var(--text-color);
     padding: 20px 24px;
     border-radius: 12px;
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.13), 0 1.5px 4px rgba(0, 0, 0, 0.10);
+    box-shadow: 0 2px 12px var(--card-shadow), 0 1.5px 4px var(--card-shadow);
     font-size: 1.2rem;
     letter-spacing: 0.02em;
+    transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 #api-results ul {

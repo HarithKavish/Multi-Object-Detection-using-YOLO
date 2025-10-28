@@ -31,10 +31,12 @@ resultDiv.id = 'results';
 resultDiv.style.maxWidth = '640px';
 resultDiv.style.margin = '20px auto';
 resultDiv.style.fontFamily = 'monospace';
-resultDiv.style.background = '#f8f8f8';
+resultDiv.style.background = 'var(--card-bg)';
+resultDiv.style.color = 'var(--text-color)';
 resultDiv.style.padding = '16px';
 resultDiv.style.borderRadius = '8px';
-resultDiv.style.boxShadow = '0 2px 8px #0001';
+resultDiv.style.boxShadow = '0 2px 8px var(--card-shadow)';
+resultDiv.style.transition = 'background-color 0.3s ease, color 0.3s ease';
 document.body.insertBefore(resultDiv, videoContainer.nextSibling);
 
 let cocoSsdModel = null;
