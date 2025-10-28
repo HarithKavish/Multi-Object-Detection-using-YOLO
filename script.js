@@ -1,4 +1,4 @@
-// Multi-Object Detection using YOLO API and TensorFlow.js CNN
+// Browser-based CNN classification using TensorFlow.js (No API!)
 const video = document.createElement('video');
 video.autoplay = true;
 video.width = 640;
@@ -9,7 +9,7 @@ document.body.insertBefore(video, document.body.firstChild);
 
 // Create a container for results
 const resultDiv = document.createElement('div');
-resultDiv.id = 'api-results';
+resultDiv.id = 'results';
 resultDiv.style.maxWidth = '640px';
 resultDiv.style.margin = '20px auto';
 resultDiv.style.fontFamily = 'monospace';
@@ -27,11 +27,14 @@ let cnnModel = null;
 
 async function loadCNNModel() {
     try {
-        // Load the TensorFlow.js model
-        cnnModel = await tf.loadLayersModel('https://harithkavish-multi-object-detection-using-yolo.hf.space/tfjs_model/model.json');
+        resultDiv.textContent = 'Loading CNN model...';
+        // Load the TensorFlow.js model from GitHub Pages
+        cnnModel = await tf.loadLayersModel('https://harithkavish.github.io/Multi-Object-Detection-using-YOLO/tfjs_model/model.json');
         console.log('CNN model loaded successfully');
+        resultDiv.textContent = 'CNN model loaded! Starting webcam...';
     } catch (error) {
         console.error('Failed to load CNN model:', error);
+        resultDiv.textContent = 'Error loading model: ' + error.message;
     }
 }
 
@@ -71,7 +74,8 @@ async function startCamera() {
         video.srcObject = stream;
         processFrames();
     } catch (err) {
-        alert('Camera access denied or not available.');
+        resultDiv.textContent = 'Camera access denied or not available: ' + err.message;
+        console.error('Camera error:', err);
     }
 }
 
@@ -84,72 +88,35 @@ async function processFrames() {
     while (true) {
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-        // Run CNN classification in browser
+        // Run CNN classification in browser (100% client-side, no API!)
         const cnnResult = await classifyWithCNN(canvas);
+        displayResults(cnnResult);
 
-        // Send frame to YOLO API for object detection
-        const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.8));
-
-        try {
-            const response = await fetch('https://harithkavish-multi-object-detection-using-yolo.hf.space/api/detect-object', {
-                method: 'POST',
-                body: JSON.stringify({
-                    data: [await blobToBase64(blob)]
-                }),
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            });
-
-            if (response.ok) {
-                const data = await response.json();
-                const yoloResult = data.data && data.data[0] ? data.data[0] : data;
-                displayResults(yoloResult, cnnResult);
-            } else {
-                resultDiv.textContent = 'API error: ' + response.status;
-            }
-        } catch (e) {
-            resultDiv.textContent = 'Network error: ' + e.message;
-        }
-
-        await new Promise(r => setTimeout(r, 200)); // Process every 200ms
+        await new Promise(r => setTimeout(r, 500)); // Process every 500ms
     }
 }
 
-function displayResults(yoloData, cnnData) {
-    let html = '';
+function displayResults(cnnData) {
+    let html = '<h3 style="margin-top:0">Browser-based CNN Classification</h3>';
 
     // Display CNN classification
     if (cnnData) {
-        html += `<div style="margin-bottom: 16px;">
-                    <strong>CNN Classification:</strong><br>
-                    ${cnnData.class} (${(cnnData.confidence * 100).toFixed(1)}% confidence)
+        html += `<div style="font-size: 18px; margin: 16px 0;">
+                    <strong>Detected:</strong> ${cnnData.class}<br>
+                    <strong>Confidence:</strong> ${(cnnData.confidence * 100).toFixed(1)}%
                  </div>`;
+
+        // Add progress bar
+        html += `<div style="background: #ddd; border-radius: 4px; overflow: hidden;">
+                    <div style="background: #4CAF50; height: 20px; width: ${(cnnData.confidence * 100).toFixed(1)}%; transition: width 0.3s;"></div>
+                 </div>`;
+    } else {
+        html += '<p>Waiting for classification...</p>';
     }
 
-    // Display YOLO object counts
-    html += '<div><strong>YOLO Detections:</strong>';
-    if (yoloData.object_counts && typeof yoloData.object_counts === 'object') {
-        html += '<ul style="margin:8px 0 0 20px">';
-        for (const [label, count] of Object.entries(yoloData.object_counts)) {
-            html += `<li>${label}: ${count}</li>`;
-        }
-        html += '</ul>';
-    } else {
-        html += '<p style="margin:8px 0">No objects detected</p>';
-    }
-    html += '</div>';
+    html += '<p style="margin-top: 16px; font-size: 12px; color: #666;">✓ Running entirely in your browser - no data sent to server!</p>';
 
     resultDiv.innerHTML = html;
-}
-
-function blobToBase64(blob) {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result);
-        reader.onerror = reject;
-        reader.readAsDataURL(blob);
-    });
 }
 
 window.onload = startCamera;
