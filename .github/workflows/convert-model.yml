@@ -22,7 +22,7 @@ jobs:
 
             - name: Install dependencies
               run: |
-                  pip install ultralytics onnx onnx-tf tensorflow==2.15.0 tensorflowjs protobuf==3.20.3
+                  pip install ultralytics onnx onnx2tf tensorflow==2.15.0 tensorflowjs protobuf==3.20.3 onnxruntime onnxsim sng4onnx
 
             - name: Train CNN Model
               run: |
@@ -35,7 +35,7 @@ jobs:
 
             - name: Convert ONNX to TensorFlow SavedModel
               run: |
-                  onnx-tf convert -i yolov8n.onnx -o yolov8_savedmodel/
+                  onnx2tf -i yolov8n.onnx -o yolov8_savedmodel/ -osd
                   echo "TensorFlow conversion complete"
 
             - name: Convert to TensorFlow.js using H5 format
