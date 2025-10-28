@@ -45,8 +45,10 @@ def start():
     model.fit(training_images, training_labels, epochs=training_count, validation_data=(testing_images, testing_labels), verbose=1)
     print("______________________________________________________________________________")
     
+    # Save in both formats
     model.save('image_classifier.keras')
-    print("Model trained and saved as image_classifier.keras.")
+    model.save('image_classifier.h5')  # For TensorFlow.js converter
+    print("Model trained and saved as image_classifier.keras and image_classifier.h5")
 
 def main():
     start()
