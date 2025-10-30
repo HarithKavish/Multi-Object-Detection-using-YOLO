@@ -25,6 +25,23 @@ canvas.style.pointerEvents = 'none';
 videoContainer.appendChild(canvas);
 const ctx = canvas.getContext('2d');
 
+// Create camera switch button
+const cameraSwitchBtn = document.createElement('button');
+cameraSwitchBtn.textContent = '🔄 Switch Camera';
+cameraSwitchBtn.style.display = 'none';
+cameraSwitchBtn.style.margin = '10px auto';
+cameraSwitchBtn.style.padding = '10px 20px';
+cameraSwitchBtn.style.fontSize = '14px';
+cameraSwitchBtn.style.cursor = 'pointer';
+cameraSwitchBtn.style.borderRadius = '5px';
+cameraSwitchBtn.style.background = '#2563eb';
+cameraSwitchBtn.style.color = 'white';
+cameraSwitchBtn.style.border = 'none';
+cameraSwitchBtn.style.transition = 'background 0.3s ease';
+cameraSwitchBtn.onmouseover = () => cameraSwitchBtn.style.background = '#1d4ed8';
+cameraSwitchBtn.onmouseout = () => cameraSwitchBtn.style.background = '#2563eb';
+document.body.insertBefore(cameraSwitchBtn, videoContainer.nextSibling);
+
 // Create a container for results
 const resultDiv = document.createElement('div');
 resultDiv.id = 'results';
@@ -37,9 +54,12 @@ resultDiv.style.padding = '16px';
 resultDiv.style.borderRadius = '8px';
 resultDiv.style.boxShadow = '0 2px 8px var(--card-shadow)';
 resultDiv.style.transition = 'background-color 0.3s ease, color 0.3s ease';
-document.body.insertBefore(resultDiv, videoContainer.nextSibling);
+document.body.insertBefore(resultDiv, cameraSwitchBtn.nextSibling);
 
 let cocoSsdModel = null;
+let currentStream = null;
+let availableCameras = [];
+let currentCameraIndex = 0;
 
 async function loadModel() {
     try {
@@ -102,15 +122,74 @@ async function detectObjects() {
     requestAnimationFrame(detectObjects);
 }
 
+async function getCameras() {
+    try {
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        availableCameras = devices.filter(device => device.kind === 'videoinput');
+        console.log(`Found ${availableCameras.length} camera(s)`);
+
+        // Show switch button only if multiple cameras available
+        if (availableCameras.length > 1) {
+            cameraSwitchBtn.style.display = 'block';
+        }
+    } catch (error) {
+        console.error('Error enumerating cameras:', error);
+    }
+}
+
+async function switchCamera() {
+    // Stop current stream
+    if (currentStream) {
+        currentStream.getTracks().forEach(track => track.stop());
+    }
+
+    // Switch to next camera
+    currentCameraIndex = (currentCameraIndex + 1) % availableCameras.length;
+    const deviceId = availableCameras[currentCameraIndex].deviceId;
+
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+            video: {
+                deviceId: { exact: deviceId },
+                width: 640,
+                height: 480
+            }
+        });
+
+        currentStream = stream;
+        video.srcObject = stream;
+
+        const cameraName = availableCameras[currentCameraIndex].label || `Camera ${currentCameraIndex + 1}`;
+        console.log(`Switched to: ${cameraName}`);
+
+    } catch (error) {
+        console.error('Error switching camera:', error);
+        resultDiv.innerHTML = '<p style="color: red;">❌ Failed to switch camera. Please try again.</p>';
+    }
+}
+
+// Camera switch button event
+cameraSwitchBtn.onclick = switchCamera;
+
 async function startCamera() {
     try {
         await loadModel();
+        await getCameras();
+
         resultDiv.innerHTML = '<p>📹 Requesting camera access...</p>';
-        const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 } });
+
+        const constraints = availableCameras.length > 0 && availableCameras[0].deviceId
+            ? { video: { deviceId: { exact: availableCameras[0].deviceId }, width: 640, height: 480 } }
+            : { video: { width: 640, height: 480 } };
+
+        const stream = await navigator.mediaDevices.getUserMedia(constraints);
+        currentStream = stream;
         video.srcObject = stream;
+
         video.onloadedmetadata = () => {
             video.play();
-            resultDiv.innerHTML = '<p>✓ Camera connected! Starting detection...</p>';
+            const cameraName = availableCameras[0]?.label || 'Default Camera';
+            resultDiv.innerHTML = `<p>✓ Camera connected: ${cameraName}</p><p>Starting detection...</p>`;
             detectObjects();
         };
     } catch (err) {
