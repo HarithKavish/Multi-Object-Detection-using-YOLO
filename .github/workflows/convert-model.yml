@@ -1,12 +1,19 @@
 name: Convert Model to TensorFlow.js
 
+# Run by hand when the model should be regenerated. It produces the TensorFlow.js model
+# as a downloadable artifact; it does not commit it. The site serves the model committed
+# at docs/tfjs_model/, and protected branches accept changes only through pull requests
+# (governance BRANCHING.md, no bypass) -- to publish a new model, download the artifact
+# and open a pull request replacing docs/tfjs_model/.
+#
+# It used to run on every push to main and push its output to a root tfjs_model/ folder
+# the site never read, installing TensorFlow and retraining each time.
+
 on:
-    push:
-        branches: [main]
     workflow_dispatch:
 
 permissions:
-    contents: write
+    contents: read
 
 jobs:
     convert:
@@ -52,11 +59,3 @@ jobs:
               with:
                   name: tfjs-model
                   path: tfjs_model/
-
-            - name: Commit and push tfjs_model
-              run: |
-                  git config --local user.email "github-actions[bot]@users.noreply.github.com"
-                  git config --local user.name "github-actions[bot]"
-                  git add -f tfjs_model/
-                  git commit -m "Update TensorFlow.js model [skip ci]" || echo "No changes to commit"
-                  git push || echo "Nothing to push"
